@@ -3,8 +3,6 @@ package main
 import (
 	"os"
 
-	"fyne.io/fyne/app"
-	"fyne.io/fyne/dialog"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -40,21 +38,6 @@ type config struct {
 }
 
 func closeWithErr(err error) {
-	log.Fatal().Err(err)
-	a := app.New()
-	w := a.NewWindow("Fbp")
 
-	// Display error message as a dialog
-	errorDialog := dialog.NewError(err, w)
-
-	// Set a callback for dialog close event
-	errorDialog.SetDismissText("Exit")
-
-	errorDialog.Show()
-	errorDialog.SetOnClosed(func() {
-		w.Close()
-		a.Quit()
-	})
-
-	w.ShowAndRun()
+	log.Fatal().Err(err).Msg("Err")
 }

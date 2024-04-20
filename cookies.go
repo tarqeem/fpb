@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
 
@@ -10,41 +11,58 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-type Cookie struct {
-	Name         string `json:"name"`
-	Path         string `json:"path"`
-	Value        string `json:"value"`
-	Domain       string `json:"domain"`
-	Secure       bool   `json:"secure"`
-	Expires      int64  `json:"expires"`
-	Session      bool   `json:"session"`
-	HttpOnly     bool   `json:"httpOnly"`
-	SameParty    bool   `json:"sameParty"`
-	SourcePort   int64  `json:"sourcePort"`
-	SourceScheme string `json:"sourceScheme"`
+type Int64FromPossibleFloat int64
+
+func (c *Int64FromPossibleFloat) UnmarshalJSON(data []byte) error {
+	var f float64
+	if err := json.Unmarshal(data, &f); err != nil {
+		return err
+	}
+	*c = Int64FromPossibleFloat(f)
+	return nil
 }
 
-func SetCookie(c *Cookie) chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
-		expr := cdp.TimeSinceEpoch(time.Unix(c.Expires, 0))
-		prams := network.SetCookie(c.Name, c.Value).
-			WithExpires(&expr).
-			WithSameParty(c.SameParty).
-			WithSourcePort(c.SourcePort).
-			WithDomain(c.Domain).
-			WithPath(c.Path).
-			WithHTTPOnly(c.HttpOnly).
-			WithSecure(c.Secure)
-		if c.SourceScheme == "Secure" {
-			prams = prams.WithSourceScheme(network.CookieSourceSchemeSecure)
-		} else if c.SourceScheme == "NotSecure" {
-			prams = prams.WithSourceScheme(network.CookieSourceSchemeNonSecure)
-		}
+type Cookie struct {
+	Name         string                 `json:"name"`
+	Path         string                 `json:"path"`
+	Value        string                 `json:"value"`
+	Domain       string                 `json:"domain"`
+	Secure       bool                   `json:"secure"`
+	Expires      Int64FromPossibleFloat `json:"expires"`
+	Session      bool                   `json:"session"`
+	HttpOnly     bool                   `json:"httpOnly"`
+	SameParty    bool                   `json:"sameParty"`
+	SourcePort   int64                  `json:"sourcePort"`
+	SourceScheme string                 `json:"sourceScheme"`
+}
 
-		if err := prams.Do(ctx); err != nil {
-			return err
+func SetCookie(cs []Cookie) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		p := []*network.CookieParam{}
+		for _, c := range cs {
+
+			expr := cdp.TimeSinceEpoch(time.Unix(int64(c.Expires), 0))
+
+			nc := &network.CookieParam{
+				Name:       c.Name,
+				Value:      c.Value,
+				Domain:     c.Domain,
+				Path:       c.Path,
+				Secure:     c.Secure,
+				HTTPOnly:   c.HttpOnly,
+				SameParty:  c.SameParty,
+				Expires:    &expr,
+				SourcePort: c.SourcePort,
+			}
+
+			if c.SourceScheme == "Secure" {
+				nc.SourceScheme = network.CookieSourceSchemeSecure
+			} else if c.SourceScheme == "NotSecure" {
+				nc.SourceScheme = network.CookieSourceSchemeNonSecure
+			}
+			p = append(p, nc)
 		}
-		return nil
+		return network.SetCookies(p).Do(ctx)
 	})
 }
 

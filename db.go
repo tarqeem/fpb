@@ -4,17 +4,17 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"time"
-
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/rs/zerolog/log"
+	"time"
 )
 
 const db_path string = "fbp.db"
 
-var Db *sql.DB
+// var Db *sql.DB
 
 // initDb creates the main table if it doesn't exist
-func initDb() (err error) {
+func initDb(Db *sql.DB) (err error) {
 	Db, err = sql.Open("sqlite3", db_path)
 	if err != nil {
 		return err
@@ -78,7 +78,6 @@ func getJSONFromDB(db *sql.DB, getAll bool) (cookies []Cookie, err error) {
 			return nil, err
 		}
 		rows = &sql.Rows{}
-		rows.Close()
 		rows, err = db.Query("SELECT json FROM main_table WHERE json = ?", jsonStr)
 		if err != nil {
 			return nil, err

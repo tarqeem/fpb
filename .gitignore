@@ -22,3 +22,5 @@ go.work
 /config.yaml
 /cookies.json
 /fbp.log
+/fpb
+/fbp.db
