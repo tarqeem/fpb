@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"os"
 	"strings"
@@ -10,7 +9,6 @@ import (
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
-	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/fetch"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
@@ -19,14 +17,6 @@ import (
 
 	"github.com/goccy/go-yaml"
 )
-
-func GetACookie(Db *sql.DB) (*Cookie, error) {
-	c, err := getJSONFromDB(Db, false)
-	if err != nil {
-		return nil, err
-	}
-	return &c[0], nil
-}
 
 func main() {
 
@@ -150,21 +140,11 @@ func main() {
 				return nil
 			}),
 
-			chromedp.ActionFunc(func(ctx context.Context) error {
-				var err error
-				scriptID, err = page.AddScriptToEvaluateOnNewDocument(script).Do(ctx)
+			// chromedp.ActionFunc(func(ctx context.Context) error {
+			// 	return emulation.SetTimezoneOverride("America/New_York").Do(ctx)
+			// }),
 
-				if err != nil {
-					return err
-				}
-				return nil
-			}),
-
-			chromedp.ActionFunc(func(ctx context.Context) error {
-				return emulation.SetTimezoneOverride("America/New_York").Do(ctx)
-			}),
-
-			chromedp.Navigate("https://pixelscan.net/"),
+			chromedp.Navigate("https://bot.sannysoft.com"),
 		); err != nil {
 		}
 
