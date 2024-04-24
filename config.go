@@ -37,6 +37,7 @@ type config struct {
 	ReuseCookisDays int    `json:"reuse_cookie"`
 	UseProxy        bool   `json:"use_proxy"`
 	UserAgent       string `json:"user_agent"`
+	Timezone        string `json:"time_zone"`
 }
 
 func closeWithErr(err error) {

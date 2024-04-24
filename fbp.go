@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/fetch"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
@@ -117,37 +118,40 @@ func main() {
 
 	wg.Add(1)
 	ctx, cancel := chromedp.NewContext(aCtx)
-	if c.UseProxy {
-		if err := chromedp.Run(ctx, SetCookie(cookies),
-			fetch.Enable().WithHandleAuthRequests(true),
-			chromedp.Navigate(c.AdscoreMedium),
-			chromedp.Sleep(5*time.Second),
-			chromedp.Location(&adscoreRes),
-			ShowCookies(),
-		); err != nil {
-			logFatalErr(err)
-		}
-	} else {
-		if err := chromedp.Run(
-			ctx,
+
+	actions := []chromedp.Action{
+		SetCookie(cookies),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var err error
+			scriptID, err = page.AddScriptToEvaluateOnNewDocument(stealth.JS).Do(ctx)
+
+			if err != nil {
+				return err
+			}
+			return nil
+		}),
+	}
+
+	// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+	if strings.TrimSpace(c.Timezone) != "" && c.Timezone != "nil" {
+		actions = append(actions,
 			chromedp.ActionFunc(func(ctx context.Context) error {
-				var err error
-				scriptID, err = page.AddScriptToEvaluateOnNewDocument(stealth.JS).Do(ctx)
-
-				if err != nil {
-					return err
-				}
-				return nil
+				return emulation.SetTimezoneOverride(c.Timezone).Do(ctx)
 			}),
+		)
+	}
 
-			// chromedp.ActionFunc(func(ctx context.Context) error {
-			// 	return emulation.SetTimezoneOverride("America/New_York").Do(ctx)
-			// }),
+	if c.UseProxy {
+		actions = append(actions, fetch.Enable().WithHandleAuthRequests(true))
+	}
 
-			chromedp.Navigate("https://bot.sannysoft.com"),
-		); err != nil {
-		}
+	actions = append(actions, chromedp.Navigate("https://bot.sannysoft.com"))
 
+	if err := chromedp.Run(
+		ctx,
+		actions...,
+	); err != nil {
+		logFatalErr(err)
 	}
 	// os.Remove(c.CookiesPath)
 	wg.Wait()
