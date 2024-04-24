@@ -35,6 +35,8 @@ type config struct {
 	AdscoreFilter   string `json:"adscore_filter"`
 	AdscoreTarget   string `json:"adscore_target"`
 	ReuseCookisDays int    `json:"reuse_cookie"`
+	UseProxy        bool   `json:"use_proxy"`
+	UserAgent       string `json:"user_agent"`
 }
 
 func closeWithErr(err error) {
