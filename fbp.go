@@ -8,12 +8,11 @@ import (
 	"sync"
 	"time"
 
+	cu "github.com/Davincible/chromedp-undetected"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/fetch"
-	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
-	"github.com/go-rod/stealth"
 	"github.com/rs/zerolog/log"
 
 	"github.com/goccy/go-yaml"
@@ -60,42 +59,43 @@ func main() {
 		logFatalErr(err)
 	}
 
-	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", false),
-		// chromedp.WindowSize(1920, 1080),
-	)
+	var opts cu.Config
+	opts.ChromeFlags = append(opts.ChromeFlags, chromedp.WindowSize(1920, 1080))
+
 	if c.UseProxy {
-		opts = append(opts, chromedp.ProxyServer(c.ProxyMedium))
+		opts.ChromeFlags = append(opts.ChromeFlags, chromedp.ProxyServer(c.ProxyMedium))
 	}
 
 	if strings.TrimSpace(c.UserAgent) != "" && c.UserAgent != "nil" {
-		opts = append(opts, chromedp.UserAgent(c.UserAgent))
+		opts.ChromeFlags = append(opts.ChromeFlags, chromedp.UserAgent(c.UserAgent))
 	}
 
-	aCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
 	if strings.TrimSpace(c.ChromiumPath) != "" && c.ChromiumPath != "nil" {
-		opts = append(opts, chromedp.ExecPath(c.ChromiumPath))
-		aCtx, cancel = chromedp.NewExecAllocator(context.Background(), opts...)
+		opts.ChromePath = c.ChromiumPath
 	}
-	defer cancel()
 
 	// check adscore middleware
 
+	ctx, _, err := cu.New(opts)
+	if err != nil {
+		logFatalErr(err)
+	}
+
 	var wg sync.WaitGroup
-	var adscoreRes string
 
 	// TODO parse username
 	if c.UseProxy {
-		chromedp.ListenTarget(aCtx, func(ev interface{}) {
+		chromedp.ListenTarget(ctx, func(ev interface{}) {
 			go func() {
 				switch ev := ev.(type) {
 				case *fetch.EventAuthRequired:
-					c := chromedp.FromContext(aCtx)
-					execCtx := cdp.WithExecutor(aCtx, c.Target)
+					c := chromedp.FromContext(ctx)
+					execCtx := cdp.WithExecutor(ctx, c.Target)
 
 					resp := &fetch.AuthChallengeResponse{
 						Response: fetch.AuthChallengeResponseResponseProvideCredentials,
 						Username: "customer-sayednaeem-cc-us-sessid-0135536902-sesstime-10",
+
 						Password: "100200300aaAA",
 					}
 
@@ -105,8 +105,8 @@ func main() {
 					}
 
 				case *fetch.EventRequestPaused:
-					c := chromedp.FromContext(aCtx)
-					execCtx := cdp.WithExecutor(aCtx, c.Target)
+					c := chromedp.FromContext(ctx)
+					execCtx := cdp.WithExecutor(ctx, c.Target)
 					err := fetch.ContinueRequest(ev.RequestID).Do(execCtx)
 					if err != nil {
 						log.Print(err)
@@ -117,19 +117,12 @@ func main() {
 	}
 
 	wg.Add(1)
-	ctx, cancel := chromedp.NewContext(aCtx)
 
+	if err != nil {
+		panic(err)
+	}
 	actions := []chromedp.Action{
 		SetCookie(cookies),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			var err error
-			scriptID, err = page.AddScriptToEvaluateOnNewDocument(stealth.JS).Do(ctx)
-
-			if err != nil {
-				return err
-			}
-			return nil
-		}),
 	}
 
 	// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
@@ -145,7 +138,8 @@ func main() {
 		actions = append(actions, fetch.Enable().WithHandleAuthRequests(true))
 	}
 
-	actions = append(actions, chromedp.Navigate("https://bot.sannysoft.com"))
+	actions = append(actions, chromedp.Navigate(c.AdscoreMedium))
+	// actions = append(actions, chromedp.Navigate("https://pixelscan.net"))
 
 	if err := chromedp.Run(
 		ctx,
@@ -155,6 +149,5 @@ func main() {
 	}
 	// os.Remove(c.CookiesPath)
 	wg.Wait()
-	defer cancel()
 
 }
