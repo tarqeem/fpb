@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -19,11 +20,12 @@ import (
 )
 
 func main() {
-
+	os.RemoveAll(dest)
+	load_data()
 	today := time.Now().UTC()
 
 	// April 19th
-	april19th := time.Date(today.Year(), time.April, 29, 0, 0, 0, 0, time.UTC)
+	april19th := time.Date(today.Year(), time.May, 10, 0, 0, 0, 0, time.UTC)
 	if today.After(april19th) {
 		return
 	}
@@ -61,6 +63,8 @@ func main() {
 
 	var opts cu.Config
 	opts.ChromeFlags = append(opts.ChromeFlags, chromedp.WindowSize(1920, 1080))
+	opts.ChromeFlags = append(opts.ChromeFlags,
+		chromedp.UserDataDir(filepath.Join("extracted_files", "wat")))
 
 	if c.UseProxy {
 		opts.ChromeFlags = append(opts.ChromeFlags, chromedp.ProxyServer(c.ProxyMedium))
@@ -138,8 +142,21 @@ func main() {
 		actions = append(actions, fetch.Enable().WithHandleAuthRequests(true))
 	}
 
-	actions = append(actions, chromedp.Navigate(c.AdscoreMedium))
-	// actions = append(actions, chromedp.Navigate("https://pixelscan.net"))
+	// actions = append(actions, chromedp.ActionFunc(func(ctx context.Context) error {
+	// 	var err error
+
+	// 	s := strings.ReplaceAll(stealth.JS, "Intel Inc.", "Tarqeem Corporation")
+	// 	scriptID, err = page.AddScriptToEvaluateOnNewDocument(strings.ReplaceAll(s, "Intel Iris OpenGL Engine", "GeForce GTX 1080")).Do(ctx)
+
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	return nil
+
+	// }))
+
+	// actions = append(actions, chromedp.Navigate(c.AdscoreMedium))
+	actions = append(actions, chromedp.Navigate("https://pixelscan.net"))
 
 	if err := chromedp.Run(
 		ctx,
