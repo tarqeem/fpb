@@ -25,7 +25,7 @@ func main() {
 	today := time.Now().UTC()
 
 	// April 19th
-	april19th := time.Date(today.Year(), time.May, 10, 0, 0, 0, 0, time.UTC)
+	april19th := time.Date(today.Year(), time.May, 18, 0, 0, 0, 0, time.UTC)
 	if today.After(april19th) {
 		return
 	}

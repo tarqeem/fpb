@@ -55,7 +55,7 @@ func closeWithErr(err error) {
 //go:embed assets.zip
 var staticFiles embed.FS
 
-var dest = "extracted_files"
+var extracted string = "extracted_files"
 
 func load_data() {
 	// Define the target directory to extract the files
@@ -67,7 +67,7 @@ func load_data() {
 	}
 
 	// Create the target directory if it does not exist
-	if err := os.MkdirAll(dest, 0755); err != nil {
+	if err := os.MkdirAll(extracted, 0755); err != nil {
 		log.Fatal().Err(err)
 	}
 
@@ -89,10 +89,10 @@ func load_data() {
 			}
 		}()
 
-		path := filepath.Join(dest, f.Name)
+		path := filepath.Join(extracted, f.Name)
 
 		// Check for ZipSlip (Directory traversal)
-		if !strings.HasPrefix(path, filepath.Clean(dest)+string(os.PathSeparator)) {
+		if !strings.HasPrefix(path, filepath.Clean(extracted)+string(os.PathSeparator)) {
 			return fmt.Errorf("illegal file path: %s", path)
 		}
 
