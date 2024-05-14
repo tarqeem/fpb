@@ -19,7 +19,6 @@
 
 # Go workspace file
 go.work
-/cookies.json
 /fbp.log
 /fpb
 /fbp.db
