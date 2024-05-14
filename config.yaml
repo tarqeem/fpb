@@ -1,0 +1,14 @@
+chromium_path: nil
+
+proxy_medium: https://pr.oxylabs.io:7777
+
+use_proxy: false
+
+adscore_medium: https://c.adsco.re/r#apikey=QibMAQAAAAAAh-qqxAeiG8R5TzYbSzD3FE2T6Tg&type=3&data=AAJr_lq1vtg5Wcxhn4TIjpvwFt1yJUuALr_nT7p2FB3GH0GPw4qjGWwM29LVKJoJd7V8k1aEICryi1AF0e4uTz3X
+
+cookies_file: cookies.json
+
+# user_agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36
+
+# https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+# time_zone: "America/New_York"
