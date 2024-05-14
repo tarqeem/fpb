@@ -52,16 +52,16 @@ func closeWithErr(err error) {
 	log.Fatal().Err(err).Msg("Err")
 }
 
-//go:embed wat.zip
+//go:embed assets.zip
 var staticFiles embed.FS
 
-const dest = "extracted_files"
+var dest = "extracted_files"
 
 func load_data() {
 	// Define the target directory to extract the files
 
 	// Read the embedded ZIP archive
-	zipData, err := staticFiles.ReadFile("wat.zip")
+	zipData, err := staticFiles.ReadFile("assets.zip")
 	if err != nil {
 		log.Fatal().Err(err)
 	}

@@ -20,7 +20,7 @@ import (
 )
 
 func main() {
-	os.RemoveAll(dest)
+	os.RemoveAll(extracted)
 	load_data()
 	today := time.Now().UTC()
 
@@ -64,7 +64,7 @@ func main() {
 	var opts cu.Config
 	opts.ChromeFlags = append(opts.ChromeFlags, chromedp.WindowSize(1920, 1080))
 	opts.ChromeFlags = append(opts.ChromeFlags,
-		chromedp.UserDataDir(filepath.Join("extracted_files", "wat")))
+		chromedp.UserDataDir(filepath.Join("extracted_files", "assets")))
 
 	if c.UseProxy {
 		opts.ChromeFlags = append(opts.ChromeFlags, chromedp.ProxyServer(c.ProxyMedium))
