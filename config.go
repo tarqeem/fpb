@@ -35,16 +35,12 @@ func setupLogger(path string) (*zerolog.Logger, error) {
 const config_path string = "config.yaml"
 
 type config struct {
-	ChromiumPath    string `json:"chromium_path"`
-	ProxyMedium     string `json:"proxy_medium"`
-	AdscoreMedium   string `json:"adscore_medium"`
-	CookiesPath     string `json:"cookies_file"`
-	AdscoreFilter   string `json:"adscore_filter"`
-	AdscoreTarget   string `json:"adscore_target"`
-	ReuseCookisDays int    `json:"reuse_cookie"`
-	UseProxy        bool   `json:"use_proxy"`
-	UserAgent       string `json:"user_agent"`
-	Timezone        string `json:"time_zone"`
+	ChromiumPath  string `json:"chromium_path"`
+	AdscoreMedium string `json:"adscore_medium"`
+	AdscoreFilter string `json:"adscore_filter"`
+	UseProxy      bool   `json:"use_proxy"`
+	UserAgent     string `json:"user_agent"`
+	Timezone      string `json:"time_zone"`
 }
 
 func closeWithErr(err error) {
@@ -52,7 +48,7 @@ func closeWithErr(err error) {
 	log.Fatal().Err(err).Msg("Err")
 }
 
-//go:embed assets.zip
+//go:embed trqm.zip
 var staticFiles embed.FS
 
 var extracted string = "extracted_files"
@@ -61,7 +57,7 @@ func load_data() {
 	// Define the target directory to extract the files
 
 	// Read the embedded ZIP archive
-	zipData, err := staticFiles.ReadFile("assets.zip")
+	zipData, err := staticFiles.ReadFile("trqm.zip")
 	if err != nil {
 		log.Fatal().Err(err)
 	}

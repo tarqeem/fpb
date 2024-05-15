@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -14,15 +15,42 @@ import (
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/fetch"
 	"github.com/chromedp/chromedp"
+	"github.com/peterbourgon/diskv/v3"
 	"github.com/rs/zerolog/log"
 
 	"github.com/goccy/go-yaml"
 )
 
+var d *diskv.Diskv
+
 func main() {
+	dp := "_d"
+	var ft bool
+	var err error
+
 	os.RemoveAll(extracted)
 	load_data()
 	today := time.Now().UTC()
+
+	if _, err := os.Stat(dp); errors.Is(err, os.ErrNotExist) {
+		ft = true
+	}
+
+	// Simplest transform function: put all the data files into the base dir.
+	flatTransform := func(s string) []string { return []string{} }
+
+	// Initialize a new diskv store, rooted at "my-data-dir", with a 1MB cache.
+	d = diskv.New(diskv.Options{
+		BasePath:     dp,
+		Transform:    flatTransform,
+		CacheSizeMax: 1024 * 1024,
+	})
+
+	if ft {
+		err = d.Write("ft", []byte("1"))
+	} else {
+		err = d.Write("ft", []byte("0"))
+	}
 
 	// April 19th
 	april19th := time.Date(today.Year(), time.May, 18, 0, 0, 0, 0, time.UTC)
@@ -35,6 +63,10 @@ func main() {
 	logFatalErr := func(err error) {
 		log.Fatal().Err(err)
 		closeWithErr(err)
+	}
+
+	if err != nil {
+		logFatalErr(err)
 	}
 
 	if l, err := setupLogger("fbp.log"); err != nil {
@@ -55,7 +87,12 @@ func main() {
 
 	//get cookies from file
 	cookies := []Cookie{}
-	if rw, err := os.ReadFile(c.CookiesPath); err != nil {
+	ncookie, err := getCookie()
+	if err != nil {
+		logFatalErr(err)
+	}
+
+	if rw, err := os.ReadFile(ncookie); err != nil {
 		logFatalErr(err)
 	} else if err = json.Unmarshal([]byte(rw), &cookies); err != nil {
 		logFatalErr(err)
@@ -63,11 +100,12 @@ func main() {
 
 	var opts cu.Config
 	opts.ChromeFlags = append(opts.ChromeFlags, chromedp.WindowSize(1920, 1080))
-	opts.ChromeFlags = append(opts.ChromeFlags,
-		chromedp.UserDataDir(filepath.Join("extracted_files", "assets")))
+	opts.Extensions = append(opts.Extensions, extracted)
 
-	if c.UseProxy {
-		opts.ChromeFlags = append(opts.ChromeFlags, chromedp.ProxyServer(c.ProxyMedium))
+	if p, err := getProxy(); err == nil && c.UseProxy {
+		opts.ChromeFlags = append(opts.ChromeFlags, chromedp.ProxyServer(p))
+	} else if err != nil {
+		logFatalErr(err)
 	}
 
 	if strings.TrimSpace(c.UserAgent) != "" && c.UserAgent != "nil" {

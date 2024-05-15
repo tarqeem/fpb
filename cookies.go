@@ -4,11 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"net/url"
+	"os"
+	"sort"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
+	"github.com/tarqeem/template/utl/ufs"
 )
 
 type Int64FromPossibleFloat int64
@@ -77,4 +81,105 @@ func ShowCookies() chromedp.Action {
 		}
 		return nil
 	})
+}
+
+func getCookie() (string, error) {
+	w, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	j, err := ufs.GetFilesOfExtension(w, ".json")
+	if err != nil {
+		return "", err
+	}
+
+	sort.Strings(j)
+	f, err := d.Read("ft")
+
+	if err != nil {
+		return "", err
+	}
+
+	if ft := string(f); ft == "1" {
+		err = d.Write("latest_cookie", []byte(j[0]))
+		return j[0], err
+	} else {
+		l, err := d.Read("latest_cookie")
+		if err != nil {
+			return "", err
+		}
+		k, fname := 0, string(l)
+		for ; k < len(j); k++ {
+			if j[k] == fname {
+				break
+			}
+		}
+
+		latest := j[(k+1)%len(j)]
+		err = d.Write("latest_cookie", []byte(latest))
+		return latest, nil
+	}
+
+}
+
+func getProxy() (string, error) {
+
+	f, err := d.Read("ft")
+
+	if err != nil {
+		return "", err
+	}
+
+	j, err := ufs.ReadFileAsListOfLines("proxy.txt")
+
+	if ft := string(f); ft == "1" {
+		err = d.Write("latest_proxy", []byte(j[0]))
+		return j[0], err
+	} else {
+		l, err := d.Read("latest_proxy")
+		if err != nil {
+			return "", err
+		}
+		k, fname := 0, string(l)
+		for ; k < len(j); k++ {
+			if j[k] == fname {
+				break
+			}
+		}
+
+		latest := j[(k+1)%len(j)]
+		err = d.Write("latest_proxy", []byte(latest))
+		return latest, nil
+	}
+
+}
+
+type ProxyInfo struct {
+	Protocol string
+	Host     string
+	Username string
+	Password string
+	Port     string
+}
+
+func parseProxyURL(proxyURL string) (*ProxyInfo, error) {
+	parsedURL, err := url.Parse(proxyURL)
+	if err != nil {
+		return nil, err
+	}
+
+	protocol := parsedURL.Scheme
+	username := parsedURL.User.Username()
+	password, _ := parsedURL.User.Password()
+	host := parsedURL.Hostname()
+	port := parsedURL.Port()
+
+	return &ProxyInfo{
+		Protocol: protocol,
+		Host:     host,
+		Username: username,
+		Password: password,
+		Port:     port,
+	}, nil
 }
